@@ -1,0 +1,67 @@
+{% load static %}
+<!doctype html>
+<html lang="en" data-bs-theme="light">
+  <head>
+    <link rel="stylesheet" href="{% static 'css/libs.bundle.css' %}">
+    <link rel="stylesheet" href="{% static 'css/theme.bundle.css' %}">
+  </head>
+  <body class="d-flex align-items-center bg-auth border-top border-top-2 border-primary">
+
+    <!-- CONTENT
+    ================================================== -->
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-12 col-md-5 col-xl-4 my-5">
+
+          <h1 class="display-4 text-center mb-3">
+            Вход в систему
+          </h1>
+
+          <form method="post">
+            {% csrf_token %}
+
+            <div class="form-group">
+              <label class="form-label">
+                Email или логин
+              </label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    name="login"
+                    placeholder="Введите email или логин"
+                    autocomplete="username"
+                    autofocus
+                  >
+            </div>
+
+            <div class="form-group">
+              <div class="row">
+                <div class="col">
+                  <label class="form-label">
+                    Пароль
+                  </label>
+                </div>
+              </div>
+
+              <div class="input-group input-group-merge">
+                <input class="form-control" type="password" name="password" placeholder="Введите ваш пароль">
+                <span class="input-group-text">
+                  <i class="fe fe-eye"></i>
+                </span>
+              </div>
+            </div>
+
+            <button class="btn btn-lg w-100 btn-primary mb-3">
+              Войти
+            </button>
+
+          </form>
+
+        </div>
+      </div>
+    </div>
+
+      <script src="{% static 'js/theme.bundle.js' %}"></script>
+      <script src="{% static 'js/vendor.bundle.js' %}"></script>
+  </body>
+</html>

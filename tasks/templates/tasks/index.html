@@ -1,0 +1,421 @@
+{% load static %}
+{% load time_filters %}
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+  <head>
+
+    <link rel="stylesheet" href="{% static 'css/libs.bundle.css' %}">
+    <link rel="stylesheet" href="{% static 'css/theme.bundle.css' %}">
+
+    <style>
+      body {
+        min-height: unset;
+      }
+
+      .kanban-item {
+        cursor: grab;
+      }
+
+      input::-webkit-outer-spin-button,
+      input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+
+      /* Firefox */
+      input[type=number] {
+        -moz-appearance: textfield;
+      }
+    </style>
+    <script>
+      const activeTimers = {{ timers|safe }};
+      window.appConfig = {
+        staticUrls: {
+          themeBundle: "{% static 'js/theme.bundle.js' %}",
+          vendorBundle: "{% static 'js/vendor.bundle.js' %}"
+        }
+      };
+    </script>
+  </head>
+  <body>
+    <div class="modal fade" id="modalTaskSplit" tabindex="-1" role="dialog" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-card card">
+            <div class="card-header">
+
+              <h4 class="card-header-title" id="exampleModalCenterTitle">
+                Разделить задачу (0 минут - 48 часов)
+              </h4>
+
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+
+            </div>
+
+            <div class="card-body">
+              <form>
+                <div class="form-group">
+                  <label for="rangeTaskTime" class="form-label">Выделено 0 мин.</label>
+                  <div class="row">
+                    <div class="col-6">
+                      <div class="form-floating form-group">
+                        <input type="number" class="form-control" min="0" step="1" id="rangeTaskTimeHours" max="48" placeholder=""> <!-- Часы-->
+                        <label for="rangeTaskTimeHours">Часы</label>
+                      </div>
+                    </div>
+                    <div class="col-6">
+                      <div class="form-floating form-group">
+                        <input type="number" class="form-control" min="0" step="1" id="rangeTaskTimeMinutes" max="59" placeholder=""> <!-- Минуты-->
+                        <label for="rangeTaskTimeMinutes">Минуты</label>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row justify-content-center">
+                    <div class="col-auto">
+                      <button type="button" class="btn btn-primary btn-lg" onclick="changeModalTime(1,0)">+</button>
+                    </div>
+                    <div class="col-auto">
+                      <button type="button" class="btn btn-primary btn-lg" onclick="changeModalTime(2,0)">-</button>
+                    </div>
+                  </div>
+                  <!-- <input type="number" min="30" step="30" required class="form-control" id="inputTaskTime" placeholder="Введите количество минут"> -->
+                  <input type="hidden" id="inputHidden">
+                  <input type="hidden" id="inputCurrentDay" value="{{ calendar.current_day }}">
+                </div>
+
+                <button type="submit" class="btn btn-primary" onclick="submitSplitTask(0)">Подтвердить</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="emptyTaskTime" tabindex="-1" role="dialog" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-card card">
+            <div class="card-header">
+
+              <h4 class="card-header-title" id="exampleModalCenterTitle">
+                Выделить время для задачи  (0 минут - 48 часов)
+              </h4>
+
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+
+            </div>
+
+            <div class="card-body">
+              <form>
+                <div class="form-group">
+                  <label for="rangeTaskTime" class="form-label">Выделено 0 мин.</label>
+                  <div class="row">
+                    <div class="col-6">
+                      <div class="form-floating form-group">
+                        <input type="number" class="form-control" min="0" step="1" id="emptyTaskTimeHours" max="48" placeholder=""> <!-- Часы-->
+                        <label for="rangeTaskTimeHours">Часы</label>
+                      </div>
+                    </div>
+                    <div class="col-6">
+                      <div class="form-floating form-group">
+                        <input type="number" class="form-control" min="0" step="1" id="emptyTaskTimeMinutes" max="59" placeholder=""> <!-- Минуты-->
+                        <label for="rangeTaskTimeMinutes">Минуты</label>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row justify-content-center">
+                    <div class="col-auto">
+                      <button type="button" class="btn btn-primary btn-lg" onclick="changeModalTime(1,1)">+</button>
+                    </div>
+                    <div class="col-auto">
+                      <button type="button" class="btn btn-primary btn-lg" onclick="changeModalTime(2,1)">-</button>
+                    </div>
+                  </div>
+                  <!-- <input type="number" min="30" step="30" required class="form-control" id="inputTaskTime" placeholder="Введите количество минут"> -->
+                  <input type="hidden" id="inputHidden">
+                  <input type="hidden" id="inputCurrentDay" value="{{ calendar.current_day }}">
+                </div>
+
+                <button type="submit" class="btn btn-primary" onclick="submitSplitTask(1)">Подтвердить</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="modalReview" tabindex="-1" role="dialog" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-card card">
+            <div class="card-header">
+              <h4 class="card-header-title">Проверка задачи</h4>
+              <button type="button" class="btn-close" data-close="modalReview" aria-label="Close"></button>
+            </div>
+            <div class="card-body">
+              <p class="mb-3">Принять задачу или отправить на доработку?</p>
+              <input type="hidden" id="reviewBitrixId">
+              <div class="d-flex gap-2">
+                <button type="button" class="btn btn-success" data-review="approve">Принять</button>
+                <button type="button" class="btn btn-warning" data-review="reject">На доработку</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+      <div 
+        id="liveToast" 
+        class="toast fade bg-solid-white" 
+        role="alert" 
+        aria-live="assertive" 
+        aria-atomic="true" 
+        data-bs-animation="true" 
+        data-bs-autohide="true" 
+        data-bs-delay="3000"
+      >
+      <div class="toast-header">
+          <strong class="me-auto">Уведомление</strong>
+          <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body" id="toastTimer">
+          Задания начнется через 3:00
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+      <div class="container-fluid">
+        <div class="row flex justify-content-between">
+          <div class="col-auto">
+            <h1 class="mt-3">Планирование задач</h1>
+          </div>
+          <div class="col-auto align-items-center" style="display: flex;">
+            <span class="badge text-bg-info" style="font-size: 16px; margin-right: 15px;">
+              Вы вошли как <b>{{ user }}</b>
+            </span>
+            <span class="badge text-bg-primary" style="font-size: 16px;cursor:pointer;" onclick="logout()">Выйти</span>
+          </div>
+        </div>
+
+        <div class="row flex-nowrap">
+          <div class="col-auto">
+              <div class="card card-sm mb-0" style="width: 400px;">
+                <div class="card-header">
+                  <h4 class="card-header-title fw-bold">Задания</h4>
+                </div>
+                <div class="card-body vh-85 overflow-y-scroll overflow-x-hidden" style="scrollbar-width: none;">
+                  <div class="kanban-category w-100 h-100" style="height: max-content;" id="0" data-associated-date="0000-00-00">
+                    {% if waiting_tasks %}
+                      {% for task in waiting_tasks %}
+                        {% if user.is_authenticated and user.is_staff %}
+                            <div class="kanban-item" id="{{ task.id }}" data-bs-bitrix="{{ task.bitrix_id }}">
+                        {% endif %}
+                              <div class="card shadow mb-3" >
+                                <div class="card-header card-header-flush py-2 px-3" style="height: auto; padding-bottom: 0 !important;">
+                                  <div class="row align-items-center justify-content-between">
+                                    <div class="col-auto">
+                                      <h4 class="card-header-title text-truncate fw-bold" style="max-width: 240px;">
+                                        {{ task.title }}
+                                      </h4>
+                                    </div>
+                                    <div class="col-auto">
+                                      <div class="dropdown">
+                                        <!-- <a href="#" id="playButton" class="text-black" role="button" style="font-size: 16px; margin-right: 5px;">
+                                          <i class="fe fe-play"></i>
+                                        </a> -->
+                                        <a href="https://vpseo.bitrix24.ru/company/personal/user/860/tasks/task/view/{{ task.bitrix_id }}/" class="text-black" style="font-size: 16px; margin-right: 5px;" role="button">
+                                          <i class="fe fe-link"></i>
+                                        </a>
+                                        {% if user.is_authenticated and user.is_staff %}
+                                        <a href="#" class="text-black" role="button" style="font-size: 16px;" onclick="controlModal({{ task.original_time_estimate }}, {{ task.id }})" data-bs-toggle="modal" data-bs-target="#modalTaskSplit" aria-haspopup="true" aria-expanded="false">
+                                          <i class="fe fe-scissors"></i>
+                                        </a>
+                                        {% endif %}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  
+                                </div>
+                                <div class="card-body py-2 px-3" style="padding-top: 0 !important;">
+                                  <div class="row justify-content-between">
+                                    <div class="col-auto text-secondary">
+                                      <small>{{ task.time_spent|format_seconds }}</small>
+                                    </div>
+                                    <div class="col-auto text-secondary" data-time="{{ task.original_time_estimate }}">
+                                      <small>{{ task.original_time_estimate|float_to_time }}</small>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                        {% if user.is_authenticated and user.is_staff %}
+                            </div>
+                        {% endif %}
+                      {% endfor %}
+                    {% endif %}
+                  </div>
+                </div>
+            </div>
+          </div>
+          <div class="col-auto" style="width: calc(100vw - 423px);">
+            <div class="card h-100 mb-0">
+              <div class="card-body overflow-y-scroll" style="height: 25vh; scrollbar-width: none;" >
+                <div class="row flex-nowrap overflow-x-scroll" style="scrollbar-width: none; position: sticky; top: 0; z-index: 3;">
+
+                  <div class="col-auto">
+                    <div class="card card-sm bg-light shadow-sm">
+                      <div class="card-body justify-content-center align-items-center d-flex" style="width: 82px">
+                        <p class="fw-bold mb-0">{{ calendar.current_month_name }}</p>
+                      </div>
+                    </div>
+                  </div>
+                  {% if users %}
+                  {% for custom_user in users %}
+                  <div class="col-auto d-flex">
+                    <div class="card card-sm bg-light shadow-sm" style="width: 400px;">
+                      <div class="card-body justify-content-center d-flex" >
+                        <p class="fw-bold mb-0">{{ custom_user.name }}</p>
+                      </div>
+                    </div>
+                  </div>
+                  {% endfor %}
+                  {% endif %}
+
+                </div>
+                
+                {% for num,data in calendar.days_in_month.items %}
+                <div class="row flex-nowrap overflow-x-scroll mb-3" style="scrollbar-width: none;">
+                  {% with month_padded=calendar.current_month|stringformat:"02d" day_padded=num|stringformat:"02d" %}
+                  {% with full_date=calendar.current_year|stringformat:"04d"|add:"-"|add:month_padded|add:"-"|add:day_padded %}
+                  
+                  <div class="col-auto" style="position: sticky; left: 0; z-index: 2;">
+                    <div class="card card-sm mb-0 bg-light h-100">
+                      <div class="card-body align-items-center justify-content-center d-flex" style="width: 82px;">
+                        <p class="fw-bold mb-0">{{ data.week_day }}</p>
+                      </div>
+                    </div>
+                  </div>
+                  {% if users %}
+                  {% for custom_user in users %}
+                  <div class="col-auto d-flex">
+                    <div class="card mb-0" style="width: 400px;">
+                      <div class="card-body">
+                        <div class="kanban-category h-100 w-100" id="{{ custom_user.bitrix_id }}" data-associated-date="{{ data.full_date }}">
+                          {% if data.tasks and custom_user.bitrix_id in data.tasks.keys %}
+                            {% with data_tasks=data.tasks|get_item:custom_user.bitrix_id %}
+                              {% for task in data_tasks %}
+
+                              {% if user.is_authenticated and user.is_staff %}
+                              <div class="kanban-item" id="{{ task.id }}" data-bs-bitrix="{{ task.bitrix_id }}">
+                              {% endif %}
+
+                                <div class="card 
+                                {% if task.status == 'under_review' %}text-bg-primary{% endif %} 
+                                {% if task.status == 'completed' %}opacity-50{% endif %}
+                                shadow mb-3"
+                                {% if not user.is_authenticated or not user.is_staff %}
+                                  id = "{{ task.id }}"
+                                {% endif %}
+                                data-status="{{ task.status }}"
+                                >
+                                  <div class="card-header card-header-flush py-2 px-3" style="height: auto; padding-bottom: 0 !important;">
+                                    <div class="row align-items-center justify-content-between">
+                                      <div class="col-auto">
+                                        <h4 class="card-header-title text-truncate fw-bold">
+                                          {{ task.title }}
+                                        </h4>
+                                      </div>
+                                      <div class="col-auto">
+                                        <div class="dropdown">
+
+                                          {# Только для "на проверке" у руководителя #}
+                                          {% if task.status == 'under_review' and user.is_staff %}
+                                            <a href="#" class="text-black" data-action="open-review" style="font-size:16px; margin-right:5px;">
+                                              <i class="fe fe-check-square"></i>
+                                            </a>
+                                          {% endif %}
+
+                                          {% if task.status == 'completed' %}
+                                            {# Завершена → показываем только ссылку #}
+                                            <a href="https://vpseo.bitrix24.ru/company/personal/user/860/tasks/task/view/{{ task.bitrix_id }}/"
+                                              class="text-black" style="font-size: 16px; margin-right: 5px;" role="button">
+                                              <i class="fe fe-link"></i>
+                                            </a>
+                                          {% else %}
+                                            {# НЕ завершена → показываем обычные действия #}
+                                            {% if task.employee.bitrix_id == employee.bitrix_id %}
+                                              <a href="#" class="text-black" data-action="play" style="font-size:16px; margin-right:5px;">
+                                                <i class="fe fe-play"></i>
+                                              </a>
+
+                                              {% if task.status != 'under_review' %}
+                                                <a href="#" class="text-black" data-action="submit-review" style="font-size:16px; margin-right:5px;">
+                                                  <i class="fe fe-flag"></i>
+                                                </a>
+                                              {% endif %}
+                                            {% endif %}
+
+                                            <a href="https://vpseo.bitrix24.ru/company/personal/user/860/tasks/task/view/{{ task.bitrix_id }}/"
+                                              class="text-black" style="font-size: 16px; margin-right: 5px;" role="button">
+                                              <i class="fe fe-link"></i>
+                                            </a>
+
+                                            {% if user.is_authenticated and user.is_staff %}
+                                              <a href="#" class="text-black" style="font-size: 16px;"
+                                                onclick="controlModal({{ task.original_time_estimate }}, {{ task.id }})"
+                                                data-bs-toggle="modal" data-bs-target="#modalTaskSplit" aria-haspopup="true" aria-expanded="false">
+                                                <i class="fe fe-scissors"></i>
+                                              </a>
+                                            {% endif %}
+                                          {% endif %}
+                                        </div>
+                                      </div>
+                                    </div>
+                                      
+                                  </div>
+                                  <div class="card-body py-2 px-3" style="padding-top: 0 !important;">
+                                    <div class="row justify-content-between">
+                                      <div class="col-auto text-secondary">
+                                        <small>{{ task.time_spent|format_seconds }}</small>
+                                      </div>
+                                      <div class="col-auto text-secondary" data-time="{{ task.original_time_estimate }}">
+                                        <small>{{ task.original_time_estimate|float_to_time }}</small>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                              {% if user.is_authenticated and user.is_staff %}
+                              </div>
+                              {% endif %}
+                              
+                              {% endfor %}
+                            {% endwith %}
+                          {% endif %}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  {% endfor %}
+                  {% endif %}
+
+                  {% endwith %}
+                  {% endwith %}
+                </div>
+                {% endfor %}
+
+              </div>
+            </div>
+          </div>
+        </div>
+
+    </div><!-- / .main-content -->
+      <script src="{% static 'js/theme.bundle.js' %}"></script>
+      <script src="{% static 'js/vendor.bundle.js' %}"></script>
+      <script src="{% static 'js/index.js' %}"></script>
+  </body>
+</html>

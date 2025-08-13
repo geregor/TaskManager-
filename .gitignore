@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.Python
+.env
+.venv/
+venv/
+ENV/
+env/
+
+# IDE/OS
+.vscode/
+.idea/
+.DS_Store
+
+# Django
+*.log
+staticfiles/
+media/
+local_settings.py
+
+# SQLite база (обычно не коммитим)
+db.sqlite3
+
+# Миграции — коммитим, НО можно исключить автосозданные *.pyc
+**/migrations/__pycache__/
+
+# Тестовые покрытия/кэш
+.coverage
+htmlcov/
+.pytest_cache/
